@@ -17,11 +17,11 @@
       "commands": [
           {
               "command": "changeTree.showTree",
-              "title": "Show Change Tree"
+              "title": "Change Tree - Show Tree View"
           },
           {
               "command": "changeTree.showFlatList",
-              "title": "Show Flat List"
+              "title": "Change Tree - Show Flat View"
           }
       ],
       "configuration": {
