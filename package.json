@@ -1,23 +1,31 @@
 {
   "name": "change-tree",
   "displayName": "Change Tree",
-  "description": "Visualizes source control changes as a tree or a flat list",
-  "version": "0.0.1",
+  "description": "Visualize source control changes as a tree or flat list in a text editor.",
+  "version": "1.0.0",
+  "publisher": "josueaosilverio",
   "engines": {
-    "vscode": "^1.96.0"
+      "vscode": "^1.75.0"
   },
   "categories": [
-    "Other"
+      "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+      "onCommand:changeTree.showTree",
+      "onCommand:changeTree.showFlatList"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "change-tree.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+      "commands": [
+          {
+              "command": "changeTree.showTree",
+              "title": "Show Change Tree"
+          },
+          {
+              "command": "changeTree.showFlatList",
+              "title": "Show Flat List"
+          }
+      ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -45,5 +53,8 @@
     "typescript": "^5.7.2",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1"
-  }
+  },
+  "extensionDependencies": [
+      "vscode.git"
+  ]
 }
