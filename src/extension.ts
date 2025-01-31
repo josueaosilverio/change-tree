@@ -13,6 +13,7 @@ function getConfig() {
             added: config.get<string>('overwriteIcon.added', '🟢'),
             modified: config.get<string>('overwriteIcon.modified', '🟡'),
             deleted: config.get<string>('overwriteIcon.deleted', '🔴'),
+            default: config.get<string>('overwriteIcon.default', '⚪'),
         },
     };
 }
@@ -113,12 +114,12 @@ function generateFlatListStructure(changes: { label: string; state: string }[], 
 }
 
 // Get emoji for file state
-function getEmojiForState(state: string, overwriteIcon: { added: string; modified: string; deleted: string }): string {
+function getEmojiForState(state: string, overwriteIcon: { added: string; modified: string; deleted: string; default: string }): string {
     switch (state) {
         case 'added': return overwriteIcon.added;
         case 'modified': return overwriteIcon.modified;
         case 'deleted': return overwriteIcon.deleted;
-        default: return '⚪';
+        default: return overwriteIcon.default;
     }
 }
 
@@ -185,19 +186,21 @@ async function getChanges(): Promise<{ label: string; state: string }[] | undefi
     return undefined;
 }
 
-// Open a text editor with the given content (read-only)
-function openTextEditor(content: string, title: string) {
-    const document = vscode.workspace.openTextDocument({
-        content,
-        language: 'plaintext',
-    });
+// TextDocumentContentProvider for read-only content
+class ChangeTreeContentProvider implements vscode.TextDocumentContentProvider {
+    private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
+    readonly onDidChange = this._onDidChange.event;
 
-    document.then(doc => {
-        vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside }).then(editor => {
-            // Make the editor read-only
-            editor.options = { readOnly: true };
-        });
-    });
+    constructor(private content: string) {}
+
+    provideTextDocumentContent(uri: vscode.Uri): string {
+        return this.content;
+    }
+
+    update(content: string) {
+        this.content = content;
+        this._onDidChange.fire(vscode.Uri.parse('change-tree://authority/Change Tree'));
+    }
 }
 
 // Activate the extension
@@ -208,6 +211,12 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
+    // Register the content provider
+    const changeTreeProvider = new ChangeTreeContentProvider('');
+    context.subscriptions.push(
+        vscode.workspace.registerTextDocumentContentProvider('change-tree', changeTreeProvider)
+    );
+
     // Command to show the tree structure
     vscode.commands.registerCommand('changeTree.showTree', async () => {
         const changes = await getChanges();
@@ -217,7 +226,11 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         const treeStructure = generateTreeStructure(changes, workspaceRoot);
-        openTextEditor(treeStructure, 'Change Tree');
+        changeTreeProvider.update(treeStructure);
+
+        const uri = vscode.Uri.parse('change-tree://authority/Change Tree');
+        const doc = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
     });
 
     // Command to show the flat list structure
@@ -229,7 +242,11 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         const flatListStructure = generateFlatListStructure(changes, workspaceRoot);
-        openTextEditor(flatListStructure, 'Flat List');
+        changeTreeProvider.update(flatListStructure);
+
+        const uri = vscode.Uri.parse('change-tree://authority/Flat List');
+        const doc = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
     });
 }
 
