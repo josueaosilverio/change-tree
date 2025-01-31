@@ -1,5 +1,24 @@
+# Ignore build output directories
 out
 dist
+
+# Ignore node_modules directory
 node_modules
+
+# Ignore VS Code test directory
 .vscode-test/
+
+# Ignore VS Code extension package files
 *.vsix
+
+# Ignore TypeScript declaration files
+*.d.ts
+
+# Ignore log files
+*.log
+
+# Ignore coverage directory
+coverage
+
+# Ignore environment variable files
+.env
