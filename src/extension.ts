@@ -41,21 +41,28 @@ function generateTreeStructure(changes: { label: string; state: string }[], work
                 // Traverse single-child directories
                 while (typeof current === 'object' && Object.keys(current).length === 1) {
                     const childKey = Object.keys(current)[0];
-                    collapsedPath += `/${childKey}`;
-                    current = current[childKey];
+                    if (typeof current[childKey] === 'object') {
+                        collapsedPath += `/${childKey}`;
+                        current = current[childKey];
+                    } else {
+                        break; // Stop if the child is a file
+                    }
                 }
 
                 if (typeof current === 'object') {
-                    // Directory with multiple children or a file at the end
+                    // Directory with multiple children
                     result += `${prefix}${isLast ? '└── ' : '├── '}${emoji} ${collapsedPath}\n`;
                     result += renderTree(current, `${prefix}${isLast ? '    ' : '│   '}`, false);
                 } else {
                     // Single file at the end of the collapsed path
                     result += `${prefix}${isLast ? '└── ' : '├── '}${emoji} ${collapsedPath}\n`;
+                    const fileKey = Object.keys(node[key])[0];
+                    const fileState = node[key][fileKey];
+                    result += `${prefix}${isLast ? '    ' : '│   '}└── ${getEmojiForState(fileState)} ${fileKey}\n`;
                 }
             } else {
                 // Normal file
-                result += `${prefix}${isLast ? '└── ' : '├── '}${emoji} ${key}\n`;
+                result += `${prefix}${isLast ? '└── ' : '├── '}${getEmojiForState(value)} ${key}\n`;
             }
         });
 
@@ -125,7 +132,7 @@ async function getSvnChanges(): Promise<{ label: string; state: string }[] | und
                     if (status === 'A') state = 'added';
                     else if (status === 'M') state = 'modified';
                     else if (status === 'D') state = 'deleted';
-                    return { label: filePath, state };
+                    return { label: filePath, state: state };
                 });
 
             resolve(changes);
@@ -159,7 +166,7 @@ function openTextEditor(content: string, title: string) {
     document.then(doc => {
         vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside }).then(editor => {
             // Make the editor read-only
-            editor.options = { readOnly: true };
+            // editor.options = { readOnly: true };
         });
     });
 }
