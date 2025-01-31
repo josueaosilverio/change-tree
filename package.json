@@ -11,8 +11,6 @@
       "Other"
   ],
   "activationEvents": [
-      "onCommand:changeTree.showTree",
-      "onCommand:changeTree.showFlatList"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -25,7 +23,47 @@
               "command": "changeTree.showFlatList",
               "title": "Show Flat List"
           }
-      ]
+      ],
+      "configuration": {
+          "title": "Change Tree",
+          "properties": {
+              "changeTree.includeFolderIcon": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Controls whether the folder icon (📁) is rendered."
+              },
+              "changeTree.includeFileIcon": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Controls whether the file status icon (🟢, 🟡, 🔴) is rendered."
+              },
+              "changeTree.overwriteIcon.folder": {
+                  "type": "string",
+                  "default": "📁",
+                  "description": "Overwrite the emoji used for folders."
+              },
+              "changeTree.overwriteIcon.added": {
+                  "type": "string",
+                  "default": "🟢",
+                  "description": "Overwrite the emoji used for added files."
+              },
+              "changeTree.overwriteIcon.modified": {
+                  "type": "string",
+                  "default": "🟡",
+                  "description": "Overwrite the emoji used for modified files."
+              },
+              "changeTree.overwriteIcon.deleted": {
+                  "type": "string",
+                  "default": "🔴",
+                  "description": "Overwrite the emoji used for deleted files."
+              },
+              "changeTree.overwriteIcon.default": {
+                  "type": "string",
+                  "default": "⚪",
+                  "description": "Overwrite the emoji used for other statuses."
+              }
+          }
+      }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
