@@ -107,9 +107,9 @@ async function getGitChanges(): Promise<{ label: string; state: string }[] | und
     }
 
     const changes = await repo.state.workingTreeChanges;
-    return changes.map(change => ({
+    return changes.map((change: { uri: { fsPath: any; }; status: number; }) => ({
         label: change.uri.fsPath,
-        state: change.status === 1 ? 'modified' : change.status === 2 ? 'added' : 'deleted',
+        state: change.status === 5 ? 'modified' : change.status === 7 ? 'added' : 'deleted',
     }));
 }
 
