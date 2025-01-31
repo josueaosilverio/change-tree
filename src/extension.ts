@@ -2,8 +2,24 @@ import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import * as path from 'path';
 
+// Get configuration values
+function getConfig() {
+    const config = vscode.workspace.getConfiguration('changeTree');
+    return {
+        includeFolderIcon: config.get<boolean>('includeFolderIcon', false),
+        includeFileIcon: config.get<boolean>('includeFileIcon', true),
+        overwriteIcon: {
+            folder: config.get<string>('overwriteIcon.folder', '📁'),
+            added: config.get<string>('overwriteIcon.added', '🟢'),
+            modified: config.get<string>('overwriteIcon.modified', '🟡'),
+            deleted: config.get<string>('overwriteIcon.deleted', '🔴'),
+        },
+    };
+}
+
 // Generate a tree structure as a string
 function generateTreeStructure(changes: { label: string; state: string }[], workspaceRoot: string): string {
+    const config = getConfig();
     const tree: { [key: string]: any } = {};
 
     // Build the tree
@@ -31,7 +47,14 @@ function generateTreeStructure(changes: { label: string; state: string }[], work
         keys.forEach((key, index) => {
             const isLast = index === keys.length - 1;
             const value = node[key];
-            const emoji = typeof value === 'string' ? getEmojiForState(value) : '📁';
+            const isFile = typeof value === 'string';
+            const emoji = isFile
+                ? config.includeFileIcon
+                    ? getEmojiForState(value, config.overwriteIcon)
+                    : ''
+                : config.includeFolderIcon
+                ? config.overwriteIcon.folder
+                : '';
 
             // Collapse single-child directories recursively
             if (typeof value === 'object') {
@@ -58,11 +81,14 @@ function generateTreeStructure(changes: { label: string; state: string }[], work
                     result += `${prefix}${isLast ? '└── ' : '├── '}${emoji} ${collapsedPath}\n`;
                     const fileKey = Object.keys(node[key])[0];
                     const fileState = node[key][fileKey];
-                    result += `${prefix}${isLast ? '    ' : '│   '}└── ${getEmojiForState(fileState)} ${fileKey}\n`;
+                    const fileEmoji = config.includeFileIcon
+                        ? getEmojiForState(fileState, config.overwriteIcon)
+                        : '';
+                    result += `${prefix}${isLast ? '    ' : '│   '}└── ${fileEmoji} ${fileKey}\n`;
                 }
             } else {
                 // Normal file
-                result += `${prefix}${isLast ? '└── ' : '├── '}${getEmojiForState(value)} ${key}\n`;
+                result += `${prefix}${isLast ? '└── ' : '├── '}${emoji} ${key}\n`;
             }
         });
 
@@ -74,21 +100,24 @@ function generateTreeStructure(changes: { label: string; state: string }[], work
 
 // Generate a flat list structure as a string
 function generateFlatListStructure(changes: { label: string; state: string }[], workspaceRoot: string): string {
+    const config = getConfig();
     return changes
         .map(change => {
             const relativePath = path.relative(workspaceRoot, change.label);
-            const emoji = getEmojiForState(change.state);
+            const emoji = config.includeFileIcon
+                ? getEmojiForState(change.state, config.overwriteIcon)
+                : '';
             return `${emoji} ${relativePath}`;
         })
         .join('\n');
 }
 
 // Get emoji for file state
-function getEmojiForState(state: string): string {
+function getEmojiForState(state: string, overwriteIcon: { added: string; modified: string; deleted: string }): string {
     switch (state) {
-        case 'added': return '🟢';
-        case 'modified': return '🟡';
-        case 'deleted': return '🔴';
+        case 'added': return overwriteIcon.added;
+        case 'modified': return overwriteIcon.modified;
+        case 'deleted': return overwriteIcon.deleted;
         default: return '⚪';
     }
 }
@@ -132,7 +161,7 @@ async function getSvnChanges(): Promise<{ label: string; state: string }[] | und
                     if (status === 'A') state = 'added';
                     else if (status === 'M') state = 'modified';
                     else if (status === 'D') state = 'deleted';
-                    return { label: filePath, state: state };
+                    return { label: filePath, state };
                 });
 
             resolve(changes);
@@ -166,7 +195,7 @@ function openTextEditor(content: string, title: string) {
     document.then(doc => {
         vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside }).then(editor => {
             // Make the editor read-only
-            // editor.options = { readOnly: true };
+            editor.options = { readOnly: true };
         });
     });
 }
